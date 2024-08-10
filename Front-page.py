@@ -10,6 +10,7 @@ json_file_path = '/app/info/attendance_data.json'
 upload_folder = '/app/uploads'
 
 os.makedirs(upload_folder, exist_ok=True)
+os.makedirs(os.path.dirname(json_file_path), exist_ok=True)
 
 @app.route('/')
 def index():
