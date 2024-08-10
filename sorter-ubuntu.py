@@ -9,6 +9,7 @@ TEXT_FILES_FOLDER = '/app/Text_files'
 IMAGES_FOLDER = '/app/Images'
 
 # Create folders if they don't exist
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(TEXT_FILES_FOLDER, exist_ok=True)
 os.makedirs(IMAGES_FOLDER, exist_ok=True)
 
