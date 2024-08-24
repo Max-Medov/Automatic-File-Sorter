@@ -6,6 +6,12 @@ import boto3
 from flask import Flask, request, jsonify
 from datetime import datetime
 
+# Fetch the S3 bucket name from environment variable
+S3_BUCKET_NAME = os.getenv('S3_BUCKET_NAME')
+
+if not S3_BUCKET_NAME:
+    raise ValueError("S3_BUCKET_NAME environment variable is not set.")
+
 app = Flask(__name__)
 
 S3_BUCKET_NAME = os.getenv('S3_BUCKET_NAME')
