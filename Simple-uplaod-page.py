@@ -11,7 +11,7 @@ app = Flask(__name__)
 S3_BUCKET_NAME = os.getenv('S3_BUCKET_NAME')
 s3_client = boto3.client('s3')
 
-# Define local paths
+# Define the local path for storing JSON data and uploaded files
 json_file_path = '/app/info/attendance_data.json'
 upload_folder = '/app/uploads'
 
@@ -42,9 +42,17 @@ def submit():
     file = request.files.get('file')
     file_path = None
 
+    # Handle file upload
+    file_path = None
     if file:
-        file_path = os.path.join(upload_folder, file.filename)
-        file.save(file_path)
+        # Validate file extension
+        allowed_extensions = {'jpg', 'jpeg', 'png', 'gif', 'txt', 'pdf'}
+        file_extension = file.filename.rsplit('.', 1)[1].lower()
+        if file_extension in allowed_extensions:
+            file_path = os.path.join(upload_folder, file.filename)
+            file.save(file_path)
+        else:
+            return jsonify({'error': 'Invalid file type. Only image, text, and PDF files are allowed.'}), 400
 
     now = datetime.now().strftime('%Y-%m-%d')
     json_data = {
