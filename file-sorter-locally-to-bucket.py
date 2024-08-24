@@ -3,6 +3,9 @@ import boto3
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
+# Load environment variables from .env file
+load_dotenv()
+
 # Fetch the S3 bucket name from environment variable
 S3_BUCKET_NAME = os.getenv('S3_BUCKET_NAME')
 
