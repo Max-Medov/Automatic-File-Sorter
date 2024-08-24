@@ -2,6 +2,7 @@ import os
 import boto3
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
+from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()

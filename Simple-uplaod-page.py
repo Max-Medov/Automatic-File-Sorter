@@ -5,6 +5,7 @@ import json
 import boto3
 from flask import Flask, request, jsonify
 from datetime import datetime
+from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
