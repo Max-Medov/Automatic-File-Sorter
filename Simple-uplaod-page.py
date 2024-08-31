@@ -63,12 +63,12 @@ def submit():
         else:
             return jsonify({'error': 'Invalid file type. Only image, text, PDF, and Word files are allowed.'}), 400
 
-    # Load existing data if the file already exists
-    if os.path.exists(json_file_path):
-        with open(json_file_path, 'r') as json_file:
-            json_data = json.load(json_file)
-    else:
-        json_data = {}
+    # Load existing data from S3 or create an empty structure if it doesn't exist
+    try:
+        s3_response = s3_client.get_object(Bucket=S3_BUCKET_NAME, Key='info/attendance_data.json')
+        json_data = json.loads(s3_response['Body'].read().decode('utf-8'))
+    except s3_client.exceptions.NoSuchKey:
+        json_data = {}  # Initialize an empty dictionary if the file doesn't exist
 
     # Add or append to the existing list under the case number
     if case_number not in json_data:
@@ -80,11 +80,7 @@ def submit():
         'file': file_path
     })
 
-    # Save the updated JSON data locally 
-    with open(json_file_path, 'w') as json_file:
-        json.dump(json_data, json_file)
-
-    # Upload JSON data to S3
+    # Upload the updated JSON data back to S3
     s3_client.put_object(Bucket=S3_BUCKET_NAME, Key='info/attendance_data.json', Body=json.dumps(json_data))
 
     return jsonify({'message': 'Data stored successfully.'})
