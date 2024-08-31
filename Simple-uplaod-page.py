@@ -53,32 +53,38 @@ def submit():
     file_path = None
 
     # Handle file upload
-    file_path = None
     if file:
         # Validate file extension
-        allowed_extensions = {'jpg', 'jpeg', 'png', 'gif', 'txt', 'pdf'}
+        allowed_extensions = {'jpg', 'jpeg', 'png', 'gif', 'txt', 'pdf', 'doc', 'docx'}
         file_extension = file.filename.rsplit('.', 1)[1].lower()
         if file_extension in allowed_extensions:
             file_path = os.path.join(upload_folder, file.filename)
             file.save(file_path)
         else:
-            return jsonify({'error': 'Invalid file type. Only image, text, and PDF files are allowed.'}), 400
+            return jsonify({'error': 'Invalid file type. Only image, text, PDF, and Word files are allowed.'}), 400
 
-    now = datetime.now().strftime('%Y-%m-%d')
-    json_data = {
-        'date': now,
-        'entries': [{
-            'name': name,
-            'phone': phone,
-            'case_number': case_number,
-            'file': file_path
-        }]
-    }
+    # Load existing data if the file already exists
+    if os.path.exists(json_file_path):
+        with open(json_file_path, 'r') as json_file:
+            json_data = json.load(json_file)
+    else:
+        json_data = {}
+
+    # Add a new entry under the case number
+    if case_number not in json_data:
+        json_data[case_number] = []
+
+    json_data[case_number].append({
+        'name': name,
+        'phone': phone,
+        'file': file_path
+    })
 
     # Upload JSON data to S3
     s3_client.put_object(Bucket=S3_BUCKET_NAME, Key='info/attendance_data.json', Body=json.dumps(json_data))
 
     return jsonify({'message': 'Data stored successfully.'})
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=3000)
