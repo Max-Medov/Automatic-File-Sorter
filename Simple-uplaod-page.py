@@ -70,7 +70,7 @@ def submit():
     else:
         json_data = {}
 
-    # Add a new entry under the case number
+    # Add or append to the existing list under the case number
     if case_number not in json_data:
         json_data[case_number] = []
 
@@ -80,10 +80,15 @@ def submit():
         'file': file_path
     })
 
+    # Save the updated JSON data locally 
+    with open(json_file_path, 'w') as json_file:
+        json.dump(json_data, json_file)
+
     # Upload JSON data to S3
     s3_client.put_object(Bucket=S3_BUCKET_NAME, Key='info/attendance_data.json', Body=json.dumps(json_data))
 
     return jsonify({'message': 'Data stored successfully.'})
+
 
 
 if __name__ == '__main__':
