@@ -77,7 +77,7 @@ def submit():
     json_data[case_number].append({
         'name': name,
         'phone': phone,
-        'file': file_path
+        'file': file.filename
     })
 
     # Upload the updated JSON data back to S3

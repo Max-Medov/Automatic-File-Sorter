@@ -1,0 +1,91 @@
+import boto3
+import json
+import os
+from datetime import datetime
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Fetch DynamoDB table name from environment variable
+DYNAMODB_TABLE_NAME = os.getenv('DYNAMODB_TABLE_NAME')
+
+if not DYNAMODB_TABLE_NAME:
+    raise ValueError("DYNAMODB_TABLE_NAME environment variable is not set.")
+
+# Initialize DynamoDB and S3 clients
+dynamodb = boto3.resource('dynamodb')
+s3_client = boto3.client('s3')
+
+# Fetch S3 bucket name from environment variable
+S3_BUCKET_NAME = os.getenv('S3_BUCKET_NAME')
+
+if not S3_BUCKET_NAME:
+    raise ValueError("S3_BUCKET_NAME environment variable is not set.")
+
+# Reference the DynamoDB table
+table = dynamodb.Table(DYNAMODB_TABLE_NAME)
+
+def update_dynamodb(case_number, user_name, phone_number, s3_path):
+    """Updates the DynamoDB table by appending the new file details to an existing case number."""
+    try:
+        response = table.update_item(
+            Key={'CaseNumber': case_number},
+            UpdateExpression="SET #un = :un, #pn = :pn, Files = list_append(if_not_exists(Files, :empty_list), :file)",
+            ExpressionAttributeNames={
+                '#un': 'UserName',
+                '#pn': 'PhoneNumber',
+            },
+            ExpressionAttributeValues={
+                ':un': user_name,
+                ':pn': phone_number,
+                ':file': [{
+                    'FilePath': s3_path,
+                    'UploadTimestamp': datetime.utcnow().isoformat()
+                }],
+                ':empty_list': []
+            },
+            ReturnValues="UPDATED_NEW"
+        )
+        print(f"Successfully updated DynamoDB for case number {case_number}")
+    except Exception as e:
+        print(f"Error updating DynamoDB: {e}")
+
+def process_json_and_update_dynamodb():
+    """Process the JSON data from S3 and update DynamoDB."""
+    try:
+        # Check if the JSON file exists in S3
+        json_key = 'info/attendance_data.json'
+        try:
+            s3_response = s3_client.get_object(Bucket=S3_BUCKET_NAME, Key=json_key)
+            json_data = json.loads(s3_response['Body'].read().decode('utf-8'))
+        except s3_client.exceptions.NoSuchKey:
+            print(f"JSON file {json_key} does not exist in S3.")
+            return  # Exit if the JSON file doesn't exist
+
+        # Loop through each case number and update DynamoDB with the correct S3 paths
+        for case_number, records in json_data.items():
+            for record in records:
+                user_name = record['name']
+                phone_number = record['phone']
+                file_name = record['file']
+
+                # Determine the correct S3 path after sorting
+                if file_name:
+                    file_extension = file_name.rsplit('.', 1)[-1].lower()
+                    if file_extension in {'jpg', 'jpeg', 'png', 'gif'}:
+                        s3_path = f"s3://{S3_BUCKET_NAME}/Images/{file_name}"
+                    elif file_extension in {'txt', 'pdf'}:
+                        s3_path = f"s3://{S3_BUCKET_NAME}/Text_files/{file_name}"
+                    else:
+                        print(f"Unsupported file type for {file_name}, skipping...")
+                        continue
+
+                    # Update DynamoDB with the correct path
+                    update_dynamodb(case_number, user_name, phone_number, s3_path)
+
+    except Exception as e:
+        print(f"Error processing JSON and updating DynamoDB: {e}")
+
+if __name__ == '__main__':
+    process_json_and_update_dynamodb()
