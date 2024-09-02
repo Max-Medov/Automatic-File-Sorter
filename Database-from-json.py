@@ -1,6 +1,7 @@
 import boto3
 import json
 import os
+import time
 from datetime import datetime
 from dotenv import load_dotenv
 
@@ -90,5 +91,28 @@ def process_json_and_update_dynamodb():
     except Exception as e:
         print(f"Error processing JSON and updating DynamoDB: {e}")
 
+def monitor_json_file():
+    """Continuously monitor the JSON file for changes."""
+    last_modified_time = None
+    json_key = 'info/attendance_data.json'
+
+    while True:
+        try:
+            # Get the current last modified time of the JSON file
+            response = s3_client.head_object(Bucket=S3_BUCKET_NAME, Key=json_key)
+            current_modified_time = response['LastModified']
+
+            # Check if the file has been updated since the last check
+            if last_modified_time is None or current_modified_time != last_modified_time:
+                print(f"File {json_key} has been updated, processing...")
+                process_json_and_update_dynamodb()
+                last_modified_time = current_modified_time
+
+            time.sleep(30)  # Wait 30 seconds before checking again
+
+        except Exception as e:
+            print(f"Error monitoring JSON file: {e}")
+            time.sleep(60)  # Wait 60 seconds before retrying
+
 if __name__ == '__main__':
-    process_json_and_update_dynamodb()
+    monitor_json_file()
