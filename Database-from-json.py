@@ -13,9 +13,12 @@ DYNAMODB_TABLE_NAME = os.getenv('DYNAMODB_TABLE_NAME')
 if not DYNAMODB_TABLE_NAME:
     raise ValueError("DYNAMODB_TABLE_NAME environment variable is not set.")
 
-# Initialize DynamoDB and S3 clients
-dynamodb = boto3.resource('dynamodb')
-s3_client = boto3.client('s3')
+# Set the AWS region
+AWS_REGION = "us-east-1"  # Replace with your specific region
+
+# Initialize DynamoDB and S3 clients with the region
+dynamodb = boto3.resource('dynamodb', region_name=AWS_REGION)
+s3_client = boto3.client('s3', region_name=AWS_REGION)
 
 # Fetch S3 bucket name from environment variable
 S3_BUCKET_NAME = os.getenv('S3_BUCKET_NAME')
