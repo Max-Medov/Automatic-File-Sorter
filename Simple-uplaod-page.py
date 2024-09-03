@@ -58,6 +58,10 @@ def submit():
         allowed_extensions = {'jpg', 'jpeg', 'png', 'gif', 'txt', 'pdf', 'doc', 'docx'}
         file_extension = file.filename.rsplit('.', 1)[1].lower()
         if file_extension in allowed_extensions:
+            # Generate a unique filename using UUID and timestamp
+            unique_suffix = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{uuid.uuid4().hex}"
+            unique_filename = f"{file.filename.rsplit('.', 1)[0]}_{unique_suffix}.{file_extension}"
+
             file_path = os.path.join(upload_folder, file.filename)
             file.save(file_path)
         else:
