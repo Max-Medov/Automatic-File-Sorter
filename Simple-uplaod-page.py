@@ -1,8 +1,7 @@
-# Flask App Code
-
 import os
 import json
 import boto3
+import uuid
 from flask import Flask, request, jsonify
 from datetime import datetime
 from dotenv import load_dotenv
@@ -18,7 +17,6 @@ if not S3_BUCKET_NAME:
 
 app = Flask(__name__)
 
-S3_BUCKET_NAME = os.getenv('S3_BUCKET_NAME')
 s3_client = boto3.client('s3')
 
 # Define the local path for storing JSON data and uploaded files
@@ -62,7 +60,7 @@ def submit():
             unique_suffix = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{uuid.uuid4().hex}"
             unique_filename = f"{file.filename.rsplit('.', 1)[0]}_{unique_suffix}.{file_extension}"
 
-            file_path = os.path.join(upload_folder, file.filename)
+            file_path = os.path.join(upload_folder, unique_filename)
             file.save(file_path)
         else:
             return jsonify({'error': 'Invalid file type. Only image, text, PDF, and Word files are allowed.'}), 400
@@ -81,15 +79,13 @@ def submit():
     json_data[case_number].append({
         'name': name,
         'phone': phone,
-        'file': file.filename
+        'file': unique_filename  # Store the unique filename instead of the original one
     })
 
     # Upload the updated JSON data back to S3
     s3_client.put_object(Bucket=S3_BUCKET_NAME, Key='info/attendance_data.json', Body=json.dumps(json_data))
 
     return jsonify({'message': 'Data stored successfully.'})
-
-
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=3000)
