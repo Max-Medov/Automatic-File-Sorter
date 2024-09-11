@@ -15,7 +15,7 @@ if not DYNAMODB_TABLE_NAME:
     raise ValueError("DYNAMODB_TABLE_NAME environment variable is not set.")
 
 # Set the AWS region
-AWS_REGION = "us-east-1"  # Replace with your specific region
+AWS_REGION = "us-east-1"
 
 # Initialize DynamoDB and S3 clients with the region
 dynamodb = boto3.resource('dynamodb', region_name=AWS_REGION)
@@ -31,29 +31,45 @@ if not S3_BUCKET_NAME:
 table = dynamodb.Table(DYNAMODB_TABLE_NAME)
 
 def update_dynamodb(case_number, user_name, phone_number, s3_path):
-    """Updates the DynamoDB table by appending the new file details to an existing case number."""
+    """Updates the DynamoDB table by appending the new file details to an existing case number if the file doesn't already exist."""
     try:
-        response = table.update_item(
-            Key={'CaseNumber': case_number},
-            UpdateExpression="SET #un = :un, #pn = :pn, Files = list_append(if_not_exists(Files, :empty_list), :file)",
-            ExpressionAttributeNames={
-                '#un': 'UserName',
-                '#pn': 'PhoneNumber',
-            },
-            ExpressionAttributeValues={
-                ':un': user_name,
-                ':pn': phone_number,
-                ':file': [{
-                    'FilePath': s3_path,
-                    'UploadTimestamp': datetime.utcnow().isoformat()
-                }],
-                ':empty_list': []
-            },
-            ReturnValues="UPDATED_NEW"
-        )
-        print(f"Successfully updated DynamoDB for case number {case_number}")
+        # Fetch the current item from DynamoDB to check if the file already exists
+        response = table.get_item(Key={'CaseNumber': case_number})
+        if 'Item' in response:
+            existing_files = response['Item'].get('Files', [])
+        else:
+            existing_files = []
+
+        # Check if the file already exists in the Files list
+        file_exists = any(file['FilePath'] == s3_path for file in existing_files)
+
+        if not file_exists:
+            # Only append the new file if it doesn't exist already
+            response = table.update_item(
+                Key={'CaseNumber': case_number},
+                UpdateExpression="SET #un = :un, #pn = :pn, Files = list_append(if_not_exists(Files, :empty_list), :file)",
+                ExpressionAttributeNames={
+                    '#un': 'UserName',
+                    '#pn': 'PhoneNumber',
+                },
+                ExpressionAttributeValues={
+                    ':un': user_name,
+                    ':pn': phone_number,
+                    ':file': [{
+                        'FilePath': s3_path,
+                        'UploadTimestamp': datetime.utcnow().isoformat()
+                    }],
+                    ':empty_list': []
+                },
+                ReturnValues="UPDATED_NEW"
+            )
+            print(f"Successfully updated DynamoDB for case number {case_number}")
+        else:
+            print(f"File {s3_path} already exists for case number {case_number}, skipping update.")
+
     except Exception as e:
         print(f"Error updating DynamoDB: {e}")
+
 
 def process_json_and_update_dynamodb():
     """Process the JSON data from S3 and update DynamoDB."""
