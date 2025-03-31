@@ -34,7 +34,7 @@ def update_dynamodb(case_number, user_name, phone_number, s3_path):
     """Updates the DynamoDB table by appending the new file details to an existing case number if the file doesn't already exist."""
     try:
         # Fetch the current item from DynamoDB to check if the file already exists
-        response = table.get_item(Key={'CaseNumber': case_number})
+        response = table.get_item(Key={'SerialNumber': serial_number})
         if 'Item' in response:
             existing_files = response['Item'].get('Files', [])
         else:
@@ -46,7 +46,7 @@ def update_dynamodb(case_number, user_name, phone_number, s3_path):
         if not file_exists:
             # Only append the new file if it doesn't exist already
             response = table.update_item(
-                Key={'CaseNumber': case_number},
+                Key={'SerialNumber': serial_number},
                 UpdateExpression="SET #un = :un, #pn = :pn, Files = list_append(if_not_exists(Files, :empty_list), :file)",
                 ExpressionAttributeNames={
                     '#un': 'UserName',
@@ -75,7 +75,7 @@ def process_json_and_update_dynamodb():
     """Process the JSON data from S3 and update DynamoDB."""
     try:
         # Check if the JSON file exists in S3
-        json_key = 'info/attendance_data.json'
+        json_key = 'IT/attendance_data.json'
         try:
             s3_response = s3_client.get_object(Bucket=S3_BUCKET_NAME, Key=json_key)
             json_data = json.loads(s3_response['Body'].read().decode('utf-8'))
