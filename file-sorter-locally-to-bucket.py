@@ -9,10 +9,11 @@ load_dotenv()
 
 # Fetch the S3 bucket name from environment variable
 S3_BUCKET_NAME = os.getenv('S3_BUCKET_NAME')
+DEPARTMENT = os.getenv('SELECTED_DEPARTMENT')
 
-if not S3_BUCKET_NAME:
-    raise ValueError("S3_BUCKET_NAME environment variable is not set.")
-
+if not S3_BUCKET_NAME or not DEPARTMENT:
+    raise ValueError("S3_BUCKET_NAME or SELECTED_DEPARTMENT environment variable is not set.")
+    
 # Initialize S3 client
 s3_client = boto3.client('s3')
 
@@ -32,7 +33,7 @@ class S3FileHandler(FileSystemEventHandler):
         
         # Determine S3 folder based on file type
         if file_extension in {'jpg', 'jpeg', 'png', 'gif'}:
-            s3_key = f"Images/{file_name}"
+            s3_key = f"{DEPARTMENT}/Images/{file_name}"  # or Text_files/, etc.
         elif file_extension in {'txt', 'pdf'}:
             s3_key = f"Text_files/{file_name}"
         else:
