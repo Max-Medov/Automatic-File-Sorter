@@ -110,7 +110,7 @@ def process_json_and_update_dynamodb():
 def monitor_json_file():
     """Continuously monitor the JSON file for changes."""
     last_modified_time = None
-    json_key = 'info/attendance_data.json'
+    json_key = "IT/attendance_data.json"
 
     while True:
         try:
