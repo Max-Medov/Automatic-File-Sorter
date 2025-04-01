@@ -15,7 +15,7 @@ if not DYNAMODB_TABLE_NAME:
     raise ValueError("DYNAMODB_TABLE_NAME environment variable is not set.")
 
 # Set the AWS region
-AWS_REGION = "us-east-1"
+AWS_REGION = "us-east-2"
 
 # Initialize DynamoDB and S3 clients with the region
 dynamodb = boto3.resource('dynamodb', region_name=AWS_REGION)
