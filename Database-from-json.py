@@ -30,8 +30,8 @@ if not S3_BUCKET_NAME:
 # Reference the DynamoDB table
 table = dynamodb.Table(DYNAMODB_TABLE_NAME)
 
-def update_dynamodb(case_number, user_name, phone_number, s3_path):
-    """Updates the DynamoDB table by appending the new file details to an existing case number if the file doesn't already exist."""
+def update_dynamodb(serial_number, user_name, phone_number, s3_path):
+    """Updates the DynamoDB table by appending the new file details to an existing serial number if the file doesn't already exist."""
     try:
         # Fetch the current item from DynamoDB to check if the file already exists
         response = table.get_item(Key={'SerialNumber': serial_number})
@@ -63,9 +63,9 @@ def update_dynamodb(case_number, user_name, phone_number, s3_path):
                 },
                 ReturnValues="UPDATED_NEW"
             )
-            print(f"Successfully updated DynamoDB for case number {case_number}")
+            print(f"Successfully updated DynamoDB for serial number {serial_number}")
         else:
-            print(f"File {s3_path} already exists for case number {case_number}, skipping update.")
+            print(f"File {s3_path} already exists for serial number {serial_number}, skipping update.")
 
     except Exception as e:
         print(f"Error updating DynamoDB: {e}")
@@ -83,8 +83,8 @@ def process_json_and_update_dynamodb():
             print(f"JSON file {json_key} does not exist in S3.")
             return  # Exit if the JSON file doesn't exist
 
-        # Loop through each case number and update DynamoDB with the correct S3 paths
-        for case_number, records in json_data.items():
+        # Loop through each serial number and update DynamoDB with the correct S3 paths
+        for serial_number, records in json_data.items():
             for record in records:
                 user_name = record['name']
                 phone_number = record['phone']
@@ -102,7 +102,7 @@ def process_json_and_update_dynamodb():
                         continue
 
                     # Update DynamoDB with the correct path
-                    update_dynamodb(case_number, user_name, phone_number, s3_path)
+                    update_dynamodb(serial_number, user_name, phone_number, s3_path)
 
     except Exception as e:
         print(f"Error processing JSON and updating DynamoDB: {e}")
