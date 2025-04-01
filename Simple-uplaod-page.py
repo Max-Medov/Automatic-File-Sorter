@@ -66,6 +66,7 @@ def submit():
             unique_filename = f"{file.filename.rsplit('.', 1)[0]}_{unique_suffix}.{file_extension}"
             file_path = os.path.join(upload_folder, unique_filename)
             file.save(file_path)
+            os.fsync(file.fileno())
 
             # Upload the file to the selected department folder
             s3_file_key = f"{department}/{unique_filename}"
