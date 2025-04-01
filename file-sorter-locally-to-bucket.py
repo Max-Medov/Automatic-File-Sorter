@@ -35,7 +35,7 @@ class S3FileHandler(FileSystemEventHandler):
         if file_extension in {'jpg', 'jpeg', 'png', 'gif'}:
             s3_key = f"{DEPARTMENT}/Images/{file_name}"  # or Text_files/, etc.
         elif file_extension in {'txt', 'pdf'}:
-            s3_key = f"{department}/Text_files/{file_name}"
+            s3_key = f"{DEPARTMENT}/Text_files/{file_name}"
         else:
             print(f"Unsupported file type: {file_path}")
             return
